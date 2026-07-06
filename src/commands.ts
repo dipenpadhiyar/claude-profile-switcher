@@ -94,14 +94,19 @@ async function performSwitch(
       vscode.commands.executeCommand('workbench.action.reloadWindow');
       return true;
     }
+    // "Later": best-effort partial refresh only. This re-activates extensions, including
+    // Claude Code's, against the new ~/.claude, but isn't guaranteed to clear the
+    // sidebar's cached identity the way a full window reload is - the warning above
+    // stays pending until the user does reload.
+    await vscode.commands.executeCommand('workbench.action.restartExtensionHost');
+    return true;
   }
 
-  // Best-effort partial refresh when the user isn't doing a full reload right now
-  // (chose "Later", or this was a silent auto-switch). This re-activates extensions,
-  // including Claude Code's, against the new ~/.claude - it just isn't guaranteed to
-  // clear the sidebar's cached identity the way a full window reload is, so the
-  // warning above stays pending regardless.
-  await vscode.commands.executeCommand('workbench.action.restartExtensionHost');
+  // Silent auto-switch: there's no user to ask, and a partial extension-host restart has
+  // already proven unreliable at clearing the sidebar's cached identity. Force the one
+  // action that's actually guaranteed to work rather than leaving the mismatch silent.
+  await app.context.globalState.update(RELOAD_PENDING_KEY, false);
+  vscode.commands.executeCommand('workbench.action.reloadWindow');
   return true;
 }
 
