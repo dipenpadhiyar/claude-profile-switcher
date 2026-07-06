@@ -1,0 +1,93 @@
+{
+  "name": "claude-profile-switcher",
+  "displayName": "Claude Profile Switcher",
+  "description": "Switch between multiple Claude Code accounts (work, personal, client, ...) from VS Code.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "private": true,
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "claudeProfiles.switchProfile",
+        "title": "Claude Profiles: Switch Profile"
+      },
+      {
+        "command": "claudeProfiles.createProfile",
+        "title": "Claude Profiles: Create Profile"
+      },
+      {
+        "command": "claudeProfiles.renameProfile",
+        "title": "Claude Profiles: Rename Profile"
+      },
+      {
+        "command": "claudeProfiles.deleteProfile",
+        "title": "Claude Profiles: Delete Profile"
+      },
+      {
+        "command": "claudeProfiles.openConfigFolder",
+        "title": "Claude Profiles: Open Config Folder"
+      },
+      {
+        "command": "claudeProfiles.backupProfile",
+        "title": "Claude Profiles: Backup Profile"
+      },
+      {
+        "command": "claudeProfiles.restoreProfile",
+        "title": "Claude Profiles: Restore Profile"
+      },
+      {
+        "command": "claudeProfiles.exportProfile",
+        "title": "Claude Profiles: Export Profile"
+      },
+      {
+        "command": "claudeProfiles.importProfile",
+        "title": "Claude Profiles: Import Profile"
+      },
+      {
+        "command": "claudeProfiles.editWorkspaceMapping",
+        "title": "Claude Profiles: Edit Workspace Mapping for Current Profile"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "claudeProfiles.switchProfile",
+        "key": "ctrl+alt+c",
+        "mac": "cmd+alt+c"
+      }
+    ],
+    "configuration": {
+      "title": "Claude Profile Switcher",
+      "properties": {
+        "claudeProfiles.autoSwitch.mode": {
+          "type": "string",
+          "enum": [
+            "prompt",
+            "silent",
+            "off"
+          ],
+          "default": "prompt",
+          "description": "What to do when the open workspace matches a profile's workspaceMatchers: ask before switching, switch silently, or do nothing."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  }
+}
