@@ -27,6 +27,16 @@ export interface AppContext {
   statusBar: ProfileStatusBar;
 }
 
+/**
+ * Persisted across extension-host restarts and window reloads. Claude Code's own sidebar
+ * caches the signed-in account's name/email in memory and only re-derives it on a full
+ * window reload - a plain extension-host restart (or no restart at all, as with silent
+ * auto-switch) leaves that cached identity stale even though usage/chat data, which is
+ * fetched live per-request, already reflects the newly active profile's credentials.
+ * This flag drives the status bar warning until the user actually reloads the window.
+ */
+export const RELOAD_PENDING_KEY = 'claudeProfiles.reloadPending';
+
 async function pickProfile(
   data: ProfilesFile,
   placeHolder: string
@@ -64,19 +74,34 @@ async function performSwitch(
   syncTerminalEnvForProfile(app.context.environmentVariableCollection, profile);
   app.statusBar.update(profile);
 
+  // Credentials on disk have already changed at this point, so any new API calls (usage,
+  // chat) will use the new profile. Only a full window reload is known to also refresh
+  // the Claude sidebar's cached account name/email - mark the warning pending until that
+  // happens, whichever path below the user ends up taking.
+  await app.context.globalState.update(RELOAD_PENDING_KEY, true);
+  app.statusBar.setReloadPending(true);
+
   if (offerReload) {
-    const choice = await vscode.window.showInformationMessage(
-      `Switched to Claude profile "${profile.name}". Reload the window so the Claude sidebar picks it up?`,
+    const choice = await vscode.window.showWarningMessage(
+      `Switched to Claude profile "${profile.name}". Reload the window so the Claude sidebar fully ` +
+        `picks it up? Without a full reload, the sidebar's account name/email can keep showing the ` +
+        `previous profile even though its usage numbers already reflect this one.`,
       'Reload Window',
-      'Try Lighter Restart (experimental, may not update the sidebar)',
       'Later'
     );
     if (choice === 'Reload Window') {
+      await app.context.globalState.update(RELOAD_PENDING_KEY, false);
       vscode.commands.executeCommand('workbench.action.reloadWindow');
-    } else if (choice?.startsWith('Try Lighter Restart')) {
-      vscode.commands.executeCommand('workbench.action.restartExtensionHost');
+      return true;
     }
   }
+
+  // Best-effort partial refresh when the user isn't doing a full reload right now
+  // (chose "Later", or this was a silent auto-switch). This re-activates extensions,
+  // including Claude Code's, against the new ~/.claude - it just isn't guaranteed to
+  // clear the sidebar's cached identity the way a full window reload is, so the
+  // warning above stays pending regardless.
+  await vscode.commands.executeCommand('workbench.action.restartExtensionHost');
   return true;
 }
 

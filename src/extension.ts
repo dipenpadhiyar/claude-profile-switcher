@@ -13,7 +13,7 @@ import {
   syncTerminalEnvForProfile
 } from './profileSwitcher';
 import { ProfileStatusBar } from './statusBar';
-import { registerCommands, performSwitch, AppContext } from './commands';
+import { registerCommands, performSwitch, AppContext, RELOAD_PENDING_KEY } from './commands';
 import { findMatchingProfile } from './workspaceAutoSwitch';
 
 const DISMISSED_WORKSPACES_KEY = 'claudeProfiles.dismissedWorkspaces';
@@ -109,6 +109,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     syncTerminalEnvForProfile(context.environmentVariableCollection, active);
   }
   statusBar.update(active);
+  // Survives extension-host restarts (and window reloads, until cleared by one) so the
+  // warning stays visible until a full "Reload Window" actually happens - see RELOAD_PENDING_KEY.
+  statusBar.setReloadPending(context.globalState.get<boolean>(RELOAD_PENDING_KEY, false));
 
   registerCommands(app);
 
